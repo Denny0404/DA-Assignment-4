@@ -1,0 +1,14 @@
+---
+- name: Save Database and Stop MySQL
+  hosts: localhost
+  become: true
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Dump subscriber table to migration file
+      shell: mysqldump -u root subscribers > migrations/V2__data_seed.sql
+
+    - name: Stop MySQL service
+      shell: sudo service mysql stop

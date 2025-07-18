@@ -1,0 +1,36 @@
+name: Database Automation CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  db-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Python & MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-server
+          sudo service mysql start
+          sudo mysql -e "CREATE DATABASE IF NOT EXISTS subscribers;" -u root
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Make Flyway Executable
+        run: |
+          curl -L https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/9.22.3/flyway-commandline-9.22.3-linux-x64.tar.gz | tar xvz
+          mv flyway-*/flyway ./flyway
+          chmod +x flyway
+
+      - name: Run Ansible Playbook - up.yaml
+        run: ansible-playbook up.yaml
+
+      - name: Run Schema Test
+        run: python dbtests.py
+
+      - name: Run Ansible Playbook - down.yaml
+        run: ansible-playbook down.yaml
